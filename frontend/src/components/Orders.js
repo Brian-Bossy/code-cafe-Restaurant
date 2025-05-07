@@ -5,58 +5,76 @@ import ItemType from '../types/items';
 import { useCurrentUserContext} from '../contexts/CurrentUserContext';
 import './stylesheets/Orders.css';
 
+// Define the API and WebSocket URLs using environment variables
+const apiUrl = process.env.REACT_APP_API_URL || '';
+const wsUrl = process.env.REACT_APP_WS_URL || ''; // Fallback needed if testing locally
 
 function Orders({ items }) {
   const [orders, setOrders] = useState([]);
- 
-const { currentUser } = useCurrentUserContext();
 
- 
+  const { currentUser } = useCurrentUserContext();
 
-useEffect(() => {
-  if (currentUser.access === 'associate') {
+  // Helper function to load orders (if needed elsewhere, otherwise keep inside deleteOrder)
+  // const loadOrders = async () => {
+  //   try {
+  //     const result = await axios.get(`${apiUrl}/api/orders`);
+  //     setOrders(result.data);
+  //   } catch (error) {
+  //     console.error("Error loading orders:", error);
+  //     // Handle error appropriately, maybe show a message
+  //   }
+  // }
 
-//adding websocket connection
+  useEffect(() => {
+    if (currentUser.access === 'associate') {
+      // Make sure wsUrl is defined before trying to connect
+      if (!wsUrl) {
+        console.error("WebSocket URL (REACT_APP_WS_URL) is not defined.");
+        return () => {}; // Return empty cleanup function
+      }
 
-const ws = new WebSocket(`${(
-  window.location.protocol === 'https:' ? 'wss://' : 'ws://'
-  )}${window.location.host}/ws-cafe`);
-  //initial connection
-  ws.onopen = () => {
-  console.log('connected');
-  };
-  //error connecting
-  ws.onerror = (event) => {
-  console.error(event);
-  };
-  //gets a message
-  ws.onmessage = (message) => {
-  const newOrders = JSON.parse(message.data);
-  setOrders(newOrders);
-  };
-  //disconnects
-  ws.onclose = () => {
-  console.log('disconnected');
-  };
- 
- return () => {
-  ws.close();
-  setOrders([]);
- };
+      // Use the absolute WebSocket URL
+      const ws = new WebSocket(`${wsUrl}/ws-cafe`); // <-- CHANGE HERE
+
+      ws.onopen = () => {
+        console.log('connected');
+        // Optionally load initial orders via HTTP if WS only sends updates
+        // loadOrders();
+      };
+      ws.onerror = (event) => {
+        console.error("WebSocket error:", event);
+      };
+      ws.onmessage = (message) => {
+        try {
+          const newOrders = JSON.parse(message.data);
+          setOrders(newOrders); // Assuming WS sends the full list
+        } catch (e) {
+          console.error("Error parsing WebSocket message:", e);
+        }
+      };
+      ws.onclose = () => {
+        console.log('disconnected');
+      };
+
+      return () => {
+        ws.close();
+        setOrders([]);
+      };
+    }
+    return () => {}; // Return empty cleanup function if not associate
+  }, [currentUser]); // Removed wsUrl from dependency array as it shouldn't change dynamically
+
+  const deleteOrder = async (order) => {
+    try {
+      // Use the absolute API URL
+      await axios.delete(`${apiUrl}/api/orders/${order.id}`); // <-- CHANGE HERE
+      // Reload orders after delete - assuming WS doesn't automatically update on delete
+      // If WS sends updates on delete, you might not need this explicit load
+      // loadOrders(); // Or rely on the WebSocket to update the list
+    } catch (error) {
+      console.error("Error deleting order:", error)
+    }
   }
-  return () => {};
-}, 
-[currentUser],
-);
-
-const deleteOrder = async (order) => {
-  try {
-    await axios.delete(`api/orders/${order.id}`);
-    loadOrders();
-  } catch (error) {
-    console.error(error)
-  }
-}
 
   return (
     <div className="orders-component">
@@ -64,7 +82,7 @@ const deleteOrder = async (order) => {
       {orders.length === 0
  ? (
   <div>
-    {currentUser.access === 'assocaite'
+    {currentUser.access === 'associate' // Corrected typo 'assocaite' to 'associate'
     ? 'No Orders'
   : 'Access Denied'}
   </div>

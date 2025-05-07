@@ -7,6 +7,9 @@ import './stylesheets/Cart.css';
 import Alert from './Alert';
 import { CartTypes } from '../reducers/cartReducer';
 
+// Define the API URL using the environment variable
+const apiUrl = process.env.REACT_APP_API_URL || '';
+
 function Cart({ cart, dispatch, items }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -25,7 +28,7 @@ function Cart({ cart, dispatch, items }) {
   }, 0);
 
 
-  // we use useMemo to wrap the tax compute function which returns the tax rate so that it renders when there is only a change in the zipCode 
+  // we use useMemo to wrap the tax compute function which returns the tax rate so that it renders when there is only a change in the zipCode
   const taxRate = useMemo(
     () => {
 
@@ -43,7 +46,8 @@ function Cart({ cart, dispatch, items }) {
     setIsSubmitting(true);
     setApiError('');
     try {
-    await axios.post(`${process.env.REACT_APP_API_URL}/api/orders`, {
+    // Use the absolute API URL
+    await axios.post(`${apiUrl}/api/orders`, { // <-- CHANGE HERE
       items: cart,
       name,
       phone,
@@ -57,7 +61,7 @@ function Cart({ cart, dispatch, items }) {
     setApiError(error?.response?.data?.error || 'Unknown Error');
   } finally {
     setIsSubmitting(false);
-  } 
+  }
   };
 
   const setFormattedPhone = (newNumber) => {
@@ -86,8 +90,9 @@ function Cart({ cart, dispatch, items }) {
       clearTimeout(debounceRef.current);
     }
     debounceRef.current = setTimeout(() => {
+      // Use the absolute API URL
       axios
-        .get(`/api/employees/isEmployeeOfTheMonth?name=${newName}`)
+        .get(`${apiUrl}/api/employees/isEmployeeOfTheMonth?name=${newName}`) // <-- CHANGE HERE
         .then((response) => setIsEmployeeOfTheMonth(
           response?.data?.isEmployeeOfTheMonth,
         ))

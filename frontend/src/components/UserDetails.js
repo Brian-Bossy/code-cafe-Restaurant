@@ -5,12 +5,16 @@ import CurrentUserContext from '../contexts/CurrentUserContext';
 import Profile from '../images/profile.svg';
 import './stylesheets/UserDetails.css';
 
+// Define the API URL using the environment variable
+const apiUrl = process.env.REACT_APP_API_URL || '';
+
 function UserDetails() {
   const  { currentUser, setCurrentUser } = useContext(CurrentUserContext);
 
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout', {});
+      // Use the absolute API URL
+      await axios.post(`${apiUrl}/api/auth/logout`, {}); // <-- CHANGE HERE
       setCurrentUser({});
     } catch (error) {
       console.error(error);

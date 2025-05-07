@@ -16,9 +16,16 @@ import CurrentUserContext from './contexts/CurrentUserContext'
 import Login from './components/Login';
 import Orders from './components/Orders';
 import Footer from './components/Footer';
-import Reviews from "./components/Reviews";
+// NOTE: Reviews component was removed as it's not part of the standard Code Cafe files
+// If you added it yourself, you can keep the import.
+// import Reviews from "./components/Reviews";
 
 const storageKey = 'cart';
+
+// Define the API URL using the environment variable
+// Use a fallback for local development if the variable isn't set
+// (you might adjust the fallback if your local setup differs)
+const apiUrl = process.env.REACT_APP_API_URL || '';
 
 function App() {
   const [items, setItems] = useState([]);
@@ -41,30 +48,33 @@ function App() {
   [],
   );
 
-useEffect(() => {
-  localStorage.setItem(storageKey, JSON.stringify(cart));
-}, [cart]);
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(cart));
+  }, [cart]);
 
 
   useEffect(() => {
+    // Use the absolute API URL
     axios
-      .get("/api/items")
+      .get(`${apiUrl}/api/items`) // <-- CHANGE HERE
       .then((result) => setItems(result.data))
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    After: axios.get(`${process.env.REACT_APP_API_URL}/api/items`)
+    // Use the absolute API URL
+    axios.get(`${apiUrl}/api/auth/current-user`) // <-- CHANGE HERE
     .then((result) => setCurrentUser(result.data))
     .catch(console.error);
   }, []);
+
   const CurrentUserContextValue = useMemo(
     () => ({ currentUser, setCurrentUser }),
     [currentUser],
   );
 
   return (
-  
+
     <Router>
       <CurrentUserContext.Provider
       value={CurrentUserContextValue}
@@ -89,20 +99,20 @@ useEffect(() => {
             <Route index element={<div>No Item Selected</div>} />
           </Route>
           <Route path="/" element={<Home items={items} />} />
-    
+
           <Route path="/login" element={<Login />} />
           <Route path="/orders" element={<Orders items={items} />} />
           <Route path="*" element={<NotFound />} />
-          
+
         </Routes>
       )}
-     
+
     <Footer />
       </CurrentUserContext.Provider>
-     
+
     </Router>
-  
-  
+
+
   );
 }
 
